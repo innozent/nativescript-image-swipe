@@ -1,543 +1,427 @@
-/*! *****************************************************************************
-Copyright (c) 2019 Tangra Inc.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-***************************************************************************** */
-import { GestureTypes } from "ui/gestures";
-import { ImageSwipeBase, allowZoomProperty, itemsProperty, pageNumberProperty } from "./image-swipe-common";
-
-// These constants specify the mode that we're in
-const MODE_NONE = 0;
-const MODE_DRAG = 1;
-const MODE_ZOOM = 2;
-const ALL_GESTURE_TYPES: GestureTypes[] = [
-    GestureTypes.doubleTap,
-    GestureTypes.longPress,
-    GestureTypes.pan,
-    GestureTypes.pinch,
-    GestureTypes.rotation,
-    GestureTypes.swipe,
-    GestureTypes.tap,
-    GestureTypes.touch
-];
-const enum Orientation {
-    Portrait = 0,
-    Landscape = 1,
-    PortraitReverse = 2,
-    LandscapeReverse = 3
+"use strict";
+function __export(m) {
+    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
-
-export * from "./image-swipe-common";
-
-export class ImageSwipe extends ImageSwipeBase {
-    public nativeView: StateViewPager;
-
-    public createNativeView() {
-        const stateViewPager = new StateViewPager(this._context);
-
+Object.defineProperty(exports, "__esModule", { value: true });
+var gestures_1 = require("ui/gestures");
+var image_swipe_common_1 = require("./image-swipe-common");
+var MODE_NONE = 0;
+var MODE_DRAG = 1;
+var MODE_ZOOM = 2;
+var ALL_GESTURE_TYPES = [
+    gestures_1.GestureTypes.doubleTap,
+    gestures_1.GestureTypes.longPress,
+    gestures_1.GestureTypes.pan,
+    gestures_1.GestureTypes.pinch,
+    gestures_1.GestureTypes.rotation,
+    gestures_1.GestureTypes.swipe,
+    gestures_1.GestureTypes.tap,
+    gestures_1.GestureTypes.touch
+];
+__export(require("./image-swipe-common"));
+var ImageSwipe = (function (_super) {
+    __extends(ImageSwipe, _super);
+    function ImageSwipe() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    ImageSwipe.prototype.createNativeView = function () {
+        var stateViewPager = new StateViewPager(this._context);
         stateViewPager.setOffscreenPageLimit(1);
-
-        const adapter = new ImageSwipePageAdapter(new WeakRef(this));
-        (stateViewPager as any).adapter = adapter;
+        var adapter = new ImageSwipePageAdapter(new WeakRef(this));
+        stateViewPager.adapter = adapter;
         stateViewPager.setAdapter(adapter);
-
-        const imageSwipePageListener = new ImageSwipePageChangeListener(new WeakRef(this));
-        (stateViewPager as any).imageSwipePageListener = imageSwipePageListener;
+        var imageSwipePageListener = new ImageSwipePageChangeListener(new WeakRef(this));
+        stateViewPager.imageSwipePageListener = imageSwipePageListener;
         stateViewPager.setOnPageChangeListener(imageSwipePageListener);
-
         if (this.pageNumber !== null && this.pageNumber !== undefined) {
             stateViewPager.setCurrentItem(this.pageNumber);
         }
-
         return stateViewPager;
-    }
-
-    public initNativeView() {
-        super.initNativeView();
-
-        const nativeView = this.nativeView as any;
+    };
+    ImageSwipe.prototype.initNativeView = function () {
+        _super.prototype.initNativeView.call(this);
+        var nativeView = this.nativeView;
         nativeView.adapter.owner = new WeakRef(this);
         nativeView.imageSwipePageListener.owner = new WeakRef(this);
-    }
-
-    get android(): StateViewPager {
-        return this.nativeView;
-    }
-
-    public refresh() {
+    };
+    Object.defineProperty(ImageSwipe.prototype, "android", {
+        get: function () {
+            return this.nativeView;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    ImageSwipe.prototype.refresh = function () {
         if (this.nativeView) {
             this.nativeView.getAdapter().notifyDataSetChanged();
         }
-
-        // Coerce selected index after we have set items to native view.
-        pageNumberProperty.coerce(this);
-    }
-    
-    public [allowZoomProperty.setNative](value: boolean) {
-        const currentImage = this.nativeView.findViewWithTag("Item" + this.pageNumber) as ZoomImageView;
+        image_swipe_common_1.pageNumberProperty.coerce(this);
+    };
+    ImageSwipe.prototype[image_swipe_common_1.allowZoomProperty.setNative] = function (value) {
+        var currentImage = this.nativeView.findViewWithTag("Item" + this.pageNumber);
         if (currentImage) {
-            // reset if there is a current image. This method is called if the initial value differs from the defaultValue (true) 
-            // before an actual image view has been created
             currentImage.reset();
         }
-    }
-
-    public [pageNumberProperty.setNative](value: number) {
+    };
+    ImageSwipe.prototype[image_swipe_common_1.pageNumberProperty.setNative] = function (value) {
         this.nativeView.setCurrentItem(value);
-    }
-
-    public [itemsProperty.setNative](value: any) {
+    };
+    ImageSwipe.prototype[image_swipe_common_1.itemsProperty.setNative] = function (value) {
         this.refresh();
+    };
+    return ImageSwipe;
+}(image_swipe_common_1.ImageSwipeBase));
+exports.ImageSwipe = ImageSwipe;
+var ImageSwipePageChangeListener = (function (_super) {
+    __extends(ImageSwipePageChangeListener, _super);
+    function ImageSwipePageChangeListener(owner) {
+        var _this = _super.call(this) || this;
+        _this.owner = owner;
+        return global.__native(_this);
     }
-}
-
-@Interfaces([android.support.v4.view.ViewPager.OnPageChangeListener])
-class ImageSwipePageChangeListener extends java.lang.Object implements android.support.v4.view.ViewPager.OnPageChangeListener {
-    constructor(private owner: WeakRef<ImageSwipe>) {
-        super();
-
-        return global.__native(this);
-    }
-
-    public onPageSelected(index: number) {
-        const owner = this.owner.get();
-
+    ImageSwipePageChangeListener.prototype.onPageSelected = function (index) {
+        var owner = this.owner.get();
         owner.pageNumber = index;
-
         owner.notify({
             eventName: ImageSwipe.pageChangedEvent,
             object: owner,
             page: index
         });
-
-        // For Angular it happens that this is triggered before the native view is initialized
         if (!owner.android) {
             return;
         }
-
-        let preloadedImageView: ZoomImageView;
-
-        preloadedImageView = owner.android.findViewWithTag("Item" + (index - 1).toString()) as ZoomImageView;
+        var preloadedImageView;
+        preloadedImageView = owner.android.findViewWithTag("Item" + (index - 1).toString());
         if (preloadedImageView) {
             preloadedImageView.reset();
         }
-
-        preloadedImageView = owner.android.findViewWithTag("Item" + (index + 1).toString()) as ZoomImageView;
+        preloadedImageView = owner.android.findViewWithTag("Item" + (index + 1).toString());
         if (preloadedImageView) {
             preloadedImageView.reset();
         }
+    };
+    ImageSwipePageChangeListener.prototype.onPageScrolled = function () {
+    };
+    ImageSwipePageChangeListener.prototype.onPageScrollStateChanged = function () {
+    };
+    ImageSwipePageChangeListener = __decorate([
+        Interfaces([androidx.viewpager.widget.ViewPager.OnPageChangeListener])
+    ], ImageSwipePageChangeListener);
+    return ImageSwipePageChangeListener;
+}(java.lang.Object));
+var StateViewPager = (function (_super) {
+    __extends(StateViewPager, _super);
+    function StateViewPager(context) {
+        var _this = _super.call(this, context) || this;
+        _this._allowScrollIn = true;
+        return global.__native(_this);
     }
-
-    public onPageScrolled() {
-        // Currently not used
-    }
-
-    public onPageScrollStateChanged() {
-        // Currently not used
-    }
-}
-
-class StateViewPager extends android.support.v4.view.ViewPager {
-    private _allowScrollIn: boolean = true;
-
-    constructor(context: android.content.Context) {
-        super(context);
-
-        return global.__native(this);
-    }
-
-    public onInterceptTouchEvent(event: android.view.MotionEvent): boolean {
+    StateViewPager.prototype.onInterceptTouchEvent = function (event) {
         if (this._allowScrollIn) {
-            return super.onInterceptTouchEvent(event);
+            return _super.prototype.onInterceptTouchEvent.call(this, event);
         }
-
         return false;
-    }
-
-    public setAllowScrollIn(allowScrollIn: boolean) {
+    };
+    StateViewPager.prototype.setAllowScrollIn = function (allowScrollIn) {
         this._allowScrollIn = allowScrollIn;
+    };
+    return StateViewPager;
+}(androidx.viewpager.widget.ViewPager));
+var ImageSwipePageAdapter = (function (_super) {
+    __extends(ImageSwipePageAdapter, _super);
+    function ImageSwipePageAdapter(owner) {
+        var _this = _super.call(this) || this;
+        _this.owner = owner;
+        return global.__native(_this);
     }
-}
-
-class ImageSwipePageAdapter extends android.support.v4.view.PagerAdapter {
-    constructor(private owner: WeakRef<ImageSwipe>) {
-        super();
-
-        return global.__native(this);
-    }
-
-    public instantiateItem(container: android.view.ViewGroup, position: number): java.lang.Object {
-        const owner = this.owner.get();
-        const imageUrl = owner._getDataItem(position)[owner.imageUrlProperty];
-        const params = new android.support.v4.view.ViewPager.LayoutParams();
+    ImageSwipePageAdapter.prototype.instantiateItem = function (container, position) {
+        var owner = this.owner.get();
+        var imageUrl = owner._getDataItem(position)[owner.imageUrlProperty];
+        var params = new androidx.viewpager.widget.ViewPager.LayoutParams();
         params.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
         params.width = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-
-        const imageView = new ZoomImageView(this.owner);
+        var imageView = new ZoomImageView(this.owner);
         imageView.setLayoutParams(params);
         imageView.setTag("Item" + position.toString());
-
-        const that = new WeakRef(owner);
+        var that = new WeakRef(owner);
         imageView.setOnCanScrollChangeListener(new OnCanScrollChangeListener({
-            onCanScrollChanged: (canScroll: boolean) => {
+            onCanScrollChanged: function (canScroll) {
                 that.get().android.setAllowScrollIn(canScroll);
             }
         }));
-
-        const progressBar = new android.widget.ProgressBar(owner._context);
+        var progressBar = new android.widget.ProgressBar(owner._context);
         progressBar.setLayoutParams(params);
         progressBar.setVisibility(android.view.View.GONE);
         progressBar.setIndeterminate(true);
-
-        const layout = new android.widget.LinearLayout(owner._context);
+        var layout = new android.widget.LinearLayout(owner._context);
         layout.setLayoutParams(params);
         layout.setOrientation(android.widget.LinearLayout.VERTICAL);
         layout.addView(progressBar);
         layout.addView(imageView);
-
         container.addView(layout);
-
         progressBar.setVisibility(android.view.View.VISIBLE);
-        const image: android.graphics.Bitmap = ImageSwipeBase._imageCache.get(imageUrl);
+        var image = image_swipe_common_1.ImageSwipeBase._imageCache.get(imageUrl);
         if (image) {
             imageView.setImageBitmap(image);
             progressBar.setVisibility(android.view.View.GONE);
         }
         else {
-            ImageSwipeBase._imageCache.push({
+            image_swipe_common_1.ImageSwipeBase._imageCache.push({
                 key: imageUrl,
                 url: imageUrl,
-                completed: (bitmap: android.graphics.Bitmap) => {
+                completed: function (bitmap) {
                     imageView.setImageBitmap(bitmap);
                     progressBar.setVisibility(android.view.View.GONE);
                 }
             });
         }
-
         return layout;
-    }
-
-    public destroyItem(container: android.view.ViewGroup, position: number, object: any) {
-        container.removeView(object as android.view.View);
-    }
-
-    public getCount(): number {
-        const owner = this.owner.get();
+    };
+    ImageSwipePageAdapter.prototype.destroyItem = function (container, position, object) {
+        container.removeView(object);
+    };
+    ImageSwipePageAdapter.prototype.getCount = function () {
+        var owner = this.owner.get();
         return owner && owner.items ? owner.items.length : 0;
-    }
-
-    public isViewFromObject(view: android.view.View, object: java.lang.Object): boolean {
+    };
+    ImageSwipePageAdapter.prototype.isViewFromObject = function (view, object) {
         return view === object;
-    }
-}
-
-class ZoomImageView extends android.widget.ImageView {
-    private _scaleFactor = [1]; // HACK: for some reason only number private variable does not work, use Array and set the value to the first item in the array. 
-    private _minScaleFactor = [1]; // HACK: for some reason only number private variable does not work, use Array and set the value to the first item in the array. 
-    private _detector: android.view.ScaleGestureDetector;
-    private _mode: number = 0;
-    private _dragged = false;
-    private _image: android.graphics.Bitmap;
-
-    // These two variables keep track of the X and Y coordinate of the finger when it first
-    // touches the screen
-    private _startX: number = 0;
-    private _startY: number = 0;
-
-    // These two variables keep track of the amount we need to translate the canvas along the X and the Y coordinate
-    private _translateX = [0]; // HACK: for some reason only number private variable does not work, use Array and set the value to the first item in the array. 
-    private _translateY = [0]; // HACK: for some reason only number private variable does not work, use Array and set the value to the first item in the array. 
-
-    // These two variables keep track of the total amount we translated the X and Y coordinates and confirmed it (finger up).
-    private _totalTranslateX = [0]; // HACK: for some reason only number private variable does not work, use Array and set the value to the first item in the array. 
-    private _totalTranslateY = [0]; // HACK: for some reason only number private variable does not work, use Array and set the value to the first item in the array. 
-
-    private _orientationChangeListener: OrientationListener;
-    private _onCanScrollChangeListener: OnCanScrollChangeListenerImplementation;
-
-    constructor(private _owner: WeakRef<ImageSwipe>) {
-        super(_owner.get()._context);
-
-        const context = _owner.get()._context;
-        const that = new WeakRef(this);
-        this._detector = new android.view.ScaleGestureDetector(context, new android.view.ScaleGestureDetector.OnScaleGestureListener({
-            onScale: (detector: android.view.ScaleGestureDetector): boolean => {
-                const owner = that.get();
-
+    };
+    return ImageSwipePageAdapter;
+}(androidx.viewpager.widget.PagerAdapter));
+var ZoomImageView = (function (_super) {
+    __extends(ZoomImageView, _super);
+    function ZoomImageView(_owner) {
+        var _this = _super.call(this, _owner.get()._context) || this;
+        _this._owner = _owner;
+        _this._scaleFactor = [1];
+        _this._minScaleFactor = [1];
+        _this._mode = 0;
+        _this._dragged = false;
+        _this._startX = 0;
+        _this._startY = 0;
+        _this._translateX = [0];
+        _this._translateY = [0];
+        _this._totalTranslateX = [0];
+        _this._totalTranslateY = [0];
+        var context = _owner.get()._context;
+        var that = new WeakRef(_this);
+        _this._detector = new android.view.ScaleGestureDetector(context, new android.view.ScaleGestureDetector.OnScaleGestureListener({
+            onScale: function (detector) {
+                var owner = that.get();
                 owner.setScaleFactor(owner.getScaleFactor() * detector.getScaleFactor());
                 return true;
             },
-            onScaleBegin: () => true,
-            // tslint:disable-next-line:no-empty
-            onScaleEnd: () => { }
+            onScaleBegin: function () { return true; },
+            onScaleEnd: function () { }
         }));
-
-        this._orientationChangeListener = new OrientationListener(context, that);
-        this._orientationChangeListener.enable();
-
-        return global.__native(this);
+        _this._orientationChangeListener = new OrientationListener(context, that);
+        _this._orientationChangeListener.enable();
+        return global.__native(_this);
     }
-
-    public setImageBitmap(image: android.graphics.Bitmap) {
+    ZoomImageView.prototype.setImageBitmap = function (image) {
         this._image = image;
-
         this.reset();
-    }
-
-    public onTouchEvent(event: android.view.MotionEvent): boolean {
-        const owner = this._owner.get();
+    };
+    ZoomImageView.prototype.onTouchEvent = function (event) {
+        var owner = this._owner.get();
         if (owner.allowZoom) {
             switch (event.getActionMasked()) {
                 case android.view.MotionEvent.ACTION_DOWN:
                     this._mode = MODE_DRAG;
-
-                    // We assign the current X and Y coordinate of the finger to startX and startY minus the previously translated
-                    // amount for each coordinates This works even when we are translating the first time because the initial
-                    // values for these two variables is zero.
                     this._startX = event.getX();
                     this._startY = event.getY();
                     break;
-
                 case android.view.MotionEvent.ACTION_MOVE:
-                    const scaleFactor = this.getScaleFactor();
-                    let translateX = this._startX - event.getX();
-                    let translateY = this._startY - event.getY();
-                    const totalTranslateX = this.getTotalTranslateX();
-                    const totalTranslateY = this.getTotalTranslateY();
-                    const height = this.getHeight();
-                    const width = this.getWidth();
-                    const imageHeight = this._image.getHeight();
-                    const imageWidth = this._image.getWidth();
-                    let canScroll = false;
-
-                    if (Math.max(0, (width - (imageWidth * scaleFactor)) / 2) !== 0) { // Not scaled large enough, we automatically center it in onDraw
+                    var scaleFactor = this.getScaleFactor();
+                    var translateX = this._startX - event.getX();
+                    var translateY = this._startY - event.getY();
+                    var totalTranslateX = this.getTotalTranslateX();
+                    var totalTranslateY = this.getTotalTranslateY();
+                    var height = this.getHeight();
+                    var width = this.getWidth();
+                    var imageHeight = this._image.getHeight();
+                    var imageWidth = this._image.getWidth();
+                    var canScroll = false;
+                    if (Math.max(0, (width - (imageWidth * scaleFactor)) / 2) !== 0) {
                         translateX = 0;
                         canScroll = true;
                     }
-                    else if (totalTranslateX + translateX < 0) { // outside left bounds
+                    else if (totalTranslateX + translateX < 0) {
                         translateX = -totalTranslateX;
                         canScroll = true;
                     }
-                    else if (totalTranslateX + translateX + width > imageWidth * scaleFactor) { // Outside right bounds
+                    else if (totalTranslateX + translateX + width > imageWidth * scaleFactor) {
                         translateX = (imageWidth * scaleFactor) - width - totalTranslateX;
                         canScroll = true;
                     }
-
                     if (this._onCanScrollChangeListener) {
                         this._onCanScrollChangeListener.onCanScrollChanged(canScroll);
                     }
-
-                    if (Math.max(0, (height - (imageHeight * scaleFactor)) / 2) !== 0) { // Not scaled large enough, we automatically center it in onDraw
+                    if (Math.max(0, (height - (imageHeight * scaleFactor)) / 2) !== 0) {
                         translateY = 0;
                     }
-                    else if (totalTranslateY + translateY < 0) { // outside lower bounds
+                    else if (totalTranslateY + translateY < 0) {
                         translateY = -totalTranslateY;
                     }
-                    else if (totalTranslateY + translateY + height > imageHeight * scaleFactor) { // Outside upper bounds
+                    else if (totalTranslateY + translateY + height > imageHeight * scaleFactor) {
                         translateY = (imageHeight * scaleFactor) - height - totalTranslateY;
                     }
-
                     if (translateX !== 0 || translateY !== 0) {
                         this._dragged = true;
                     }
-
                     this.setTranslateX(translateX);
                     this.setTranslateY(translateY);
-
                     break;
-
                 case android.view.MotionEvent.ACTION_POINTER_DOWN:
                     this._mode = MODE_ZOOM;
                     break;
-
                 case android.view.MotionEvent.ACTION_UP:
                     this._mode = MODE_NONE;
                     this._dragged = false;
-
-                    // All fingers went up, so let's save the value of translateX and translateY into previousTranslateX and
-                    // previousTranslate
                     this.setTotalTranslateX(this.getTotalTranslateX() + this.getTranslateX());
                     this.setTotalTranslateY(this.getTotalTranslateY() + this.getTranslateY());
                     this.setTranslateX(0);
                     this.setTranslateY(0);
                     break;
-
                 case android.view.MotionEvent.ACTION_POINTER_UP:
                     this._mode = MODE_DRAG;
-
-                    // This is not strictly necessary; we save the value of translateX and translateY into previousTranslateX
-                    // and previousTranslateY when the second finger goes up
                     this.setTotalTranslateX(this.getTotalTranslateX() + this.getTranslateX());
                     this.setTotalTranslateY(this.getTotalTranslateY() + this.getTranslateY());
                     this.setTranslateX(0);
                     this.setTranslateY(0);
                     break;
             }
-
             this._detector.onTouchEvent(event);
             if ((this._mode === MODE_DRAG && this._dragged)
                 || this._mode === MODE_ZOOM) {
                 this.invalidate();
             }
         }
-
-        for (const gestureType of ALL_GESTURE_TYPES) {
-            for (const observer of owner.getGestureObservers(gestureType) || []) {
+        for (var _i = 0, ALL_GESTURE_TYPES_1 = ALL_GESTURE_TYPES; _i < ALL_GESTURE_TYPES_1.length; _i++) {
+            var gestureType = ALL_GESTURE_TYPES_1[_i];
+            for (var _a = 0, _b = owner.getGestureObservers(gestureType) || []; _a < _b.length; _a++) {
+                var observer = _b[_a];
                 observer.androidOnTouchEvent(event);
             }
         }
-
         return true;
-    }
-
-    public onDraw(canvas: android.graphics.Canvas) {
+    };
+    ZoomImageView.prototype.onDraw = function (canvas) {
         canvas.save();
-
-        const scaleFactor = this.getScaleFactor();
-
-        // We're going to scale the X and Y coordinates by the same amount
+        var scaleFactor = this.getScaleFactor();
         canvas.scale(scaleFactor, scaleFactor);
         canvas.translate(-(this.getTotalTranslateX() + this.getTranslateX()) / scaleFactor, -(this.getTotalTranslateY() + this.getTranslateY()) / scaleFactor);
-
         if (this._image) {
             canvas.drawBitmap(this._image, Math.max(0, (this.getWidth() - (this._image.getWidth() * scaleFactor)) / 2) / scaleFactor, Math.max(0, (this.getHeight() - (this._image.getHeight() * scaleFactor)) / 2) / scaleFactor, new android.graphics.Paint());
         }
         canvas.restore();
-    }
-
-    public setOnCanScrollChangeListener(listener: OnCanScrollChangeListenerImplementation) {
+    };
+    ZoomImageView.prototype.setOnCanScrollChangeListener = function (listener) {
         this._onCanScrollChangeListener = listener;
-    }
-
-    public setMinScaleFactor(scaleFactor: number) {
+    };
+    ZoomImageView.prototype.setMinScaleFactor = function (scaleFactor) {
         this._minScaleFactor[0] = scaleFactor;
-    }
-    public getMinScaleFactor(): number {
+    };
+    ZoomImageView.prototype.getMinScaleFactor = function () {
         return this._minScaleFactor[0];
-    }
-
-    public setScaleFactor(scaleFactor: number) {
+    };
+    ZoomImageView.prototype.setScaleFactor = function (scaleFactor) {
         this._scaleFactor[0] = Math.max(this.getMinScaleFactor(), scaleFactor);
-    }
-    public getScaleFactor(): number {
+    };
+    ZoomImageView.prototype.getScaleFactor = function () {
         return this._scaleFactor[0];
-    }
-
-    public setTranslateX(translate: number) {
+    };
+    ZoomImageView.prototype.setTranslateX = function (translate) {
         this._translateX[0] = translate;
-    }
-    public getTranslateX(): number {
+    };
+    ZoomImageView.prototype.getTranslateX = function () {
         return this._translateX[0];
-    }
-
-    public setTranslateY(translate: number) {
+    };
+    ZoomImageView.prototype.setTranslateY = function (translate) {
         this._translateY[0] = translate;
-    }
-    public getTranslateY(): number {
+    };
+    ZoomImageView.prototype.getTranslateY = function () {
         return this._translateY[0];
-    }
-
-    public setTotalTranslateX(translate: number) {
+    };
+    ZoomImageView.prototype.setTotalTranslateX = function (translate) {
         this._totalTranslateX[0] = translate;
-    }
-    public getTotalTranslateX(): number {
+    };
+    ZoomImageView.prototype.getTotalTranslateX = function () {
         return this._totalTranslateX[0];
-    }
-
-    public setTotalTranslateY(translate: number) {
+    };
+    ZoomImageView.prototype.setTotalTranslateY = function (translate) {
         this._totalTranslateY[0] = translate;
-    }
-    public getTotalTranslateY(): number {
+    };
+    ZoomImageView.prototype.getTotalTranslateY = function () {
         return this._totalTranslateY[0];
-    }
-
-    public reset(isDelayIn?: boolean) {
-        setTimeout(() => {
-            if (this && this._image) {
+    };
+    ZoomImageView.prototype.reset = function (isDelayIn) {
+        var _this = this;
+        setTimeout(function () {
+            if (_this && _this._image) {
                 try {
-                    this.setTotalTranslateX(0);
-                    this.setTotalTranslateY(0);
-                    this.setTranslateX(0);
-                    this.setTranslateY(0);
-                    this.setMinScaleFactor(Math.min(this.getHeight() / this._image.getHeight(), this.getWidth() / this._image.getWidth()));
-                    this.setScaleFactor(this.getMinScaleFactor());
-                    this.invalidate();
+                    _this.setTotalTranslateX(0);
+                    _this.setTotalTranslateY(0);
+                    _this.setTranslateX(0);
+                    _this.setTranslateY(0);
+                    _this.setMinScaleFactor(Math.min(_this.getHeight() / _this._image.getHeight(), _this.getWidth() / _this._image.getWidth()));
+                    _this.setScaleFactor(_this.getMinScaleFactor());
+                    _this.invalidate();
                 }
                 catch (e) {
-                    // Do nothing
                 }
             }
         }, (isDelayIn ? 750 : 10));
+    };
+    return ZoomImageView;
+}(android.widget.ImageView));
+var OrientationListener = (function (_super) {
+    __extends(OrientationListener, _super);
+    function OrientationListener(context, zoomImageView) {
+        var _this = _super.call(this, context) || this;
+        _this._zoomImageView = zoomImageView;
+        _this._previousOrientation = 0;
+        return global.__native(_this);
     }
-}
-
-class OrientationListener extends android.view.OrientationEventListener {
-    private _zoomImageView: WeakRef<ZoomImageView>;
-    private _previousOrientation: Orientation;
-
-    constructor(context: android.content.Context, zoomImageView: WeakRef<ZoomImageView>) {
-        super(context);
-
-        this._zoomImageView = zoomImageView;
-        this._previousOrientation = Orientation.Portrait;
-
-        return global.__native(this);
-    }
-
-    public onOrientationChanged(orientation: number) {
-        const zoomImageView: ZoomImageView = this._zoomImageView.get();
-        let orientationChanged = false;
-        let currentOrientation: Orientation;
-
+    OrientationListener.prototype.onOrientationChanged = function (orientation) {
+        var zoomImageView = this._zoomImageView.get();
+        var orientationChanged = false;
+        var currentOrientation;
         if (orientation <= 45) {
-            currentOrientation = Orientation.Portrait;
-        } else if (orientation <= 135) {
-            currentOrientation = Orientation.LandscapeReverse;
-        } else if (orientation <= 225) {
-            currentOrientation = Orientation.PortraitReverse;
-        } else if (orientation <= 315) {
-            currentOrientation = Orientation.Landscape;
-        } else {
-            currentOrientation = Orientation.Portrait;
+            currentOrientation = 0;
         }
-
+        else if (orientation <= 135) {
+            currentOrientation = 3;
+        }
+        else if (orientation <= 225) {
+            currentOrientation = 2;
+        }
+        else if (orientation <= 315) {
+            currentOrientation = 1;
+        }
+        else {
+            currentOrientation = 0;
+        }
         if (currentOrientation !== this._previousOrientation) {
             this._previousOrientation = currentOrientation;
             orientationChanged = true;
         }
-
         if (zoomImageView && orientationChanged) {
             zoomImageView.reset(true);
         }
+    };
+    return OrientationListener;
+}(android.view.OrientationEventListener));
+var OnCanScrollChangeListener = (function (_super) {
+    __extends(OnCanScrollChangeListener, _super);
+    function OnCanScrollChangeListener(implementation) {
+        var _this = _super.call(this) || this;
+        _this._implementation = implementation;
+        return global.__native(_this);
     }
-}
-
-interface OnCanScrollChangeListenerImplementation {
-    onCanScrollChanged(canScroll: boolean): void;
-}
-
-class OnCanScrollChangeListener extends java.lang.Object implements OnCanScrollChangeListenerImplementation {
-    private _implementation: OnCanScrollChangeListenerImplementation;
-
-    constructor(implementation: OnCanScrollChangeListenerImplementation) {
-        super();
-
-        this._implementation = implementation;
-
-        return global.__native(this);
-    }
-
-    public onCanScrollChanged(canScroll: boolean) {
+    OnCanScrollChangeListener.prototype.onCanScrollChanged = function (canScroll) {
         this._implementation.onCanScrollChanged(canScroll);
-    }
-}
+    };
+    return OnCanScrollChangeListener;
+}(java.lang.Object));
